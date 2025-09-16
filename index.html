@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triage Decision Tool</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    header {
+      width: 100%;
+      background: #c0392b;
+      padding: 20px;
+      color: #fff;
+      font-size: 22px;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .container {
+      background: #fff;
+      margin: 40px 20px;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      max-width: 650px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 26px;
+      text-align: center;
+      margin-bottom: 25px;
+      color: #c0392b;
+    }
+    .question {
+      margin: 20px 0 10px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .options {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 15px;
+      font-size: 16px;
+      font-weight: 500;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #fafafa;
+      transition: all 0.2s ease;
+    }
+    .btn:hover {
+      background: #f2f2f2;
+    }
+    .btn.selected {
+      border-color: #c0392b;
+      background: #fdecea;
+      color: #c0392b;
+      font-weight: 600;
+    }
+    .submit-btn {
+      display: block;
+      margin: 30px auto 0;
+      padding: 14px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: #c0392b;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .submit-btn:hover {
+      background: #962d22;
+    }
+    .result {
+      margin-top: 30px;
+      padding: 25px;
+      border-radius: 12px;
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      display: none;
+      white-space: pre-line;
+    }
+    .green { background: #2ecc71; color: white; }
+    .yellow { background: #f1c40f; color: #2c2c2c; }
+    .red { background: #e74c3c; color: white; }
+    .bold-line { font-weight: 900; display: block; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header>🚑 Emergency Triage Tool</header>
+
+  <div class="container">
+    <h1>Decision Assistant</h1>
+
+    <div class="question">Is the person conscious?</div>
+    <div class="options">
+      <button class="btn" onclick="setAnswer(this, 'conscious','yes')">Yes</button>
+      <button class="btn" onclick="setAnswer(this, 'conscious','no')">No</button>
+    </div>
+
+    <div class="question">Is the person breathing?</div>
+    <div class="options">
+      <button class="btn" onclick="setAnswer(this, 'breathing','yes')">Yes</button>
+      <button class="btn" onclick="setAnswer(this, 'breathing','no')">No</button>
+    </div>
+
+    <div class="question">Is the person bleeding?</div>
+    <div class="options">
+      <button class="btn" onclick="setAnswer(this, 'bleeding','none')">No</button>
+      <button class="btn" onclick="setAnswer(this, 'bleeding','mild')">Mild</button>
+      <button class="btn" onclick="setAnswer(this, 'bleeding','severe')">Severe</button>
+    </div>
+
+    <button class="submit-btn" onclick="checkScenario()">Check Priority</button>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    let answers = { conscious: null, breathing: null, bleeding: null };
+
+    function setAnswer(button, question, value) {
+      answers[question] = value;
+      let buttons = button.parentNode.querySelectorAll('.btn');
+      buttons.forEach(btn => btn.classList.remove('selected'));
+      button.classList.add('selected');
+    }
+
+    function checkScenario() {
+      let { conscious, breathing, bleeding } = answers;
+      let resultBox = document.getElementById('result');
+      let text = "";
+      let severity = "";
+
+      if (!conscious || !breathing || !bleeding) {
+        resultBox.textContent = "⚠️ Please answer all questions.";
+        resultBox.className = "result yellow";
+        resultBox.style.display = "block";
+        return;
+      }
+
+      if (conscious === 'yes' && breathing === 'yes' && bleeding === 'none') {
+        text = "Not Urgent: Monitor and assess. Arrange care." +
+               "<span class='bold-line'>➡️ Proceed to ask further questions on Breathing first, then Consciousness.</span>";
+        severity = "green";
+      } else if (conscious === 'yes' && breathing === 'yes' && bleeding === 'mild') {
+        text = "Urgent: Control mild bleeding. Reassure and monitor." +
+               "<span class='bold-line'>➡️ Proceed to ask further questions on Breathing first, then Consciousness after controlling bleeding.</span>";
+        severity = "yellow";
+      } else if (conscious === 'yes' && breathing === 'yes' && bleeding === 'severe') {
+        text = "Life Threatening: Control severe bleeding immediately. Monitor airway & prepare for shock." +
+               "<span class='bold-line'>➡️ Proceed to ask further questions on Breathing first, then Consciousness after controlling bleeding.</span>";
+        severity = "red";
+      } else if (conscious === 'yes' && breathing === 'no' && bleeding === 'none') {
+        text = "Life Threatening: Clear airway (choking/Heimlich). If unresponsive → CPR.";
+        severity = "red";
+      } else if (conscious === 'yes' && breathing === 'no' && bleeding === 'mild') {
+        text = "Life Threatening: Clear airway / assist breathing first. Manage bleeding after.";
+        severity = "red";
+      } else if (conscious === 'yes' && breathing === 'no' && bleeding === 'severe') {
+        text = "Life Threatening: Clear airway / assist breathing first. Control severe bleeding simultaneously.";
+        severity = "red";
+      } else if (conscious === 'no' && breathing === 'yes' && bleeding === 'none') {
+        text = "Urgent: Place in recovery position. Monitor closely." +
+               "<span class='bold-line'>➡️ Proceed to ask further questions on Breathing, then Consciousness.</span>";
+        severity = "yellow";
+      } else if (conscious === 'no' && breathing === 'yes' && bleeding === 'mild') {
+        text = "Urgent: Recovery position + control mild bleeding. Monitor breathing." +
+               "<span class='bold-line'>➡️ Proceed to ask further questions on Breathing, then Consciousness.</span>";
+        severity = "yellow";
+      } else if (conscious === 'no' && breathing === 'yes' && bleeding === 'severe') {
+        text = "Life Threatening: Control severe bleeding first. Then recovery position." +
+               "<span class='bold-line'>➡️ Proceed to ask further questions on Breathing, then Consciousness.</span>";
+        severity = "red";
+      } else if (conscious === 'no' && breathing === 'no' && bleeding === 'none') {
+        text = "Life Threatening: Start CPR immediately (Airway–Breathing–Circulation).";
+        severity = "red";
+      } else if (conscious === 'no' && breathing === 'no' && bleeding === 'mild') {
+        text = "Life Threatening: Start CPR immediately. Control mild bleeding later.";
+        severity = "red";
+      } else if (conscious === 'no' && breathing === 'no' && bleeding === 'severe') {
+        text = "Life Threatening: Worst-case. Control severe bleeding first (C-ABC). Then CPR.";
+        severity = "red";
+      }
+
+      resultBox.innerHTML = text;
+      resultBox.className = `result ${severity}`;
+      resultBox.style.display = "block";
+    }
+  </script>
+</body>
+</html>
